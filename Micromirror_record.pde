@@ -9,12 +9,12 @@ final float pi = 3.1415926535;
 final boolean throwOutRepeats = false;
 
 
-final char CHAR_SYN    = 'a';  // Connection test from control computer
-final char CHAR_SYNACK = 'b';  // Response to connection test from microcontroller
-final char CHAR_ACK    = 'c';  // Confirmation from control computer
-final char CHAR_NAK    = 'd';  // Invalid response from control computer
-final char CHAR_DAT    = 'e';  // Data request from control computer
-final char CHAR_DRYRUN = 'f';  // Request to take dry-run measurements of microcontroller
+final char CHAR_SYN    = 0x01;  // Connection test from control computer
+final char CHAR_SYNACK = 0x02;  // Response to connection test from microcontroller
+final char CHAR_ACK    = 0x03;  // Confirmation from control computer
+final char CHAR_NAK    = 0x04;  // Invalid response from control computer
+final char CHAR_DAT    = 0x05;  // Data request from control computer
+final char CHAR_DRYRUN = 0x06;  // Request to take dry-run measurements of microcontroller
 
 
 enum state{
