@@ -2,7 +2,7 @@ import processing.serial.*;
 import javax.swing.*;
 import static javax.swing.JOptionPane.*;
 
-final int SERIAL_TIMEOUT = 2000;
+final int SERIAL_TIMEOUT = 10000;
 
 final float pi = 3.1415926535;
 
