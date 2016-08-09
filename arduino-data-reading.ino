@@ -30,12 +30,12 @@
 #define pi 3.1415926535      // Approximation of pi -- for trig functions
 
 //Control character definitions
-const char CHAR_SYN    = 'a';   // Connection test from control computer
-const char CHAR_SYNACK = 'b';   // Response to connection test
-const char CHAR_ACK    = 'c';   // Conformation from control computer
-const char CHAR_NAK    = 'd';   // Invalid response from control computer
-const char CHAR_DAT    = 'e';   // Data request from control comptuer
-const char CHAR_DRYRUN = 'f';   // Request to take dry-run measurements from control computer
+const char CHAR_SYN    = 0x01;   // Connection test from control computer
+const char CHAR_SYNACK = 0x02;   // Response to connection test
+const char CHAR_ACK    = 0x03;   // Conformation from control computer
+const char CHAR_NAK    = 0x04;   // Invalid response from control computer
+const char CHAR_DAT    = 0x05;   // Data request from control comptuer
+const char CHAR_DRYRUN = 0x06;   // Request to take dry-run measurements from control computer
 
 //Timeout definitions
 #define SYN_TIMEOUT 1000     // Number of milliseconds to wait for a connection ack from control computer
@@ -249,6 +249,7 @@ bool doHandshake(){
 				
 		delay(1);
 	}	
+	return ack;
 }	
 
 /**
