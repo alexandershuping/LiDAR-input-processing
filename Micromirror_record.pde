@@ -131,12 +131,12 @@ void draw(){
     double[] dati;
     
       dat_pi = getData();
-      dati = getCoordsFromAngles(angleFromVolts(dat_pi[0]), angleFromVolts(dat_pi[1]), (int)dat_pi[2]);
+      dati = getCoordsFromAngles(angleFromVolts(dat_pi[0]), angleFromVolts(dat_pi[1]), dat_pi[2]);
       win.textSize(10);
       win.text("X="+dati[0]+",Y="+dati[1]+"Z="+dati[2],0,100);
       win.text("Received Vh="+dat_pi[0]+",Vv="+dat_pi[1]+"Dis="+dat_pi[2],0,110);
       win.text("Currently initializing... No output yet.",0,125);
-    if(abs((int)dat_pi[2] - lastVal)<2){
+    if(abs((int)dat_pi[2] - lastVal)<2 && dat_pi[2] > 2.0){
        numRep++;
        if(numRep>=5);
        win.text("Initialization complete!",0,135);
