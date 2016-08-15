@@ -132,7 +132,7 @@ void loop() {
       #ifdef MANUAL_READINGS 
 			while(digitalRead(BUTN_PIN)==HIGH){};         // If manual control is set, wait for a button press to respond with data
       #endif
-	    Serial.println(vHorz);                        // Send horizontal-axis micromirror voltage
+      Serial.println(vHorz);                        // Send horizontal-axis micromirror voltage
       Serial.println(vVert);                        // Send  vertical-axis  micromirror voltage
       #ifdef MANUAL_READINGS
 	  vHorz += VOLTAGE_STEP_MAN;                      // If manual control is set, increment horizontal voltage by set amount (see #defines at top of file)
@@ -150,8 +150,8 @@ void loop() {
       #endif
 	  serFlush();
     }else if(c==CHAR_DRYRUN){                          // This character indicates a request for a "dry run" -- data are to be collected and processed from a single point (so the micromirror is not to be actuated)
-      Serial.println(vVert);                           // Send  vertical-axis  micromirror voltage
-      Serial.println(vHorz);                           // Send horizontal-axis micromirror voltage
+      Serial.println(vHorz);                        // Send horizontal-axis micromirror voltage
+      Serial.println(vVert);                        // Send  vertical-axis  micromirror voltage
       Serial.println(avgDist);                         // Send distance reading
       flash(2, INDC_PIN);                              // Flash an indication that this is a dry run.
       serFlush();
