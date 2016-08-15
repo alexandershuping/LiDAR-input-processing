@@ -141,7 +141,7 @@ void loop() {
   	    vVert = 0;                                  //                   Set it to zero 
 	    vHorz = vHorz == MAX_MIRROR_VOLTAGE ? 0 : vHorz + VOLTAGE_STEP; // and increment the horizontal voltage (unless that is also maximum, in which case, set it to zero as well)
 	  }else{
-	    vVert += VOLTGAE_STEP;                         //   Otherwise, increment vertical mirror voltage by set amount (see #defines at top of file
+	    vVert += VOLTAGE_STEP;                         //   Otherwise, increment vertical mirror voltage by set amount (see #defines at top of file
 	  }
 	  #endif
 	  Serial.println(avgDist);                         // Send distance measure to control computer
