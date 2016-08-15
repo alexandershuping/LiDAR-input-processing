@@ -135,7 +135,7 @@ void loop() {
 	    Serial.println(vHorz);                        // Send horizontal-axis micromirror voltage
       Serial.println(vVert);                        // Send  vertical-axis  micromirror voltage
       #ifdef MANUAL_READINGS
-	  vVert += VOLTAGE_STEP_MAN;                      // If manual control is set, increment vertical voltage by set amount (see #defines at top of file)
+	  vHorz += VOLTAGE_STEP_MAN;                      // If manual control is set, increment horizontal voltage by set amount (see #defines at top of file)
 	  #else                                           // If manual control is unset, do the following:
       if(vVert == MAX_MIRROR_VOLTAGE){              //   If vertical displacement is at maximum value
   	    vVert = 0;                                  //                   Set it to zero 
