@@ -124,21 +124,21 @@ void loop() {
   if(Serial.available()){                             // Wait for serial connection
     char c = Serial.read();                           // Read control character from serial
     if(c==CHAR_SYN){                                  // This character indicates that the control computer is establishing / verifying connection
-		while(!doHandshake()){                        // Complete the handshake (see function description for more info)
+		while(!doHandshake()){                            // Complete the handshake (see function description for more info)
 			flash(5, INDC_PIN);                             // If the handshake times out, flash an errorcode and retry
 			serFlush();
 		}
 	}else if(c==CHAR_DAT){                            // This character indicates a data request from the control computer
       #ifdef MANUAL_READINGS 
-			while(digitalRead(BUTN_PIN)==HIGH){};     // If manual control is set, wait for a button press to respond with data
+			while(digitalRead(BUTN_PIN)==HIGH){};         // If manual control is set, wait for a button press to respond with data
       #endif
-	  Serial.println(vVert);                          // Send  vertical-axis  micromirror voltage
-      Serial.println(vHorz);                          // Send horizontal-axis micromirror voltage
+	    Serial.println(vHorz);                        // Send horizontal-axis micromirror voltage
+      Serial.println(vVert);                        // Send  vertical-axis  micromirror voltage
       #ifdef MANUAL_READINGS
 	  vVert += VOLTAGE_STEP_MAN;                      // If manual control is set, increment vertical voltage by set amount (see #defines at top of file)
 	  #else                                           // If manual control is unset, do the following:
-      if(vVert == MAX_MIRROR_VOLTAGE){                //   If vertical displacement is at maximum value
-  	    vVert = 0;                                    //                   Set it to zero 
+      if(vVert == MAX_MIRROR_VOLTAGE){              //   If vertical displacement is at maximum value
+  	    vVert = 0;                                  //                   Set it to zero 
 	    vHorz = vHorz == MAX_MIRROR_VOLTAGE ? 0 : vHorz + VOLTAGE_STEP; // and increment the horizontal voltage (unless that is also maximum, in which case, set it to zero as well)
 	  }else{
 	    vVert += VOLTGAE_STEP;                         //   Otherwise, increment vertical mirror voltage by set amount (see #defines at top of file
