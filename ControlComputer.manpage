@@ -1,0 +1,26 @@
+.TH ControlComputer 7 "19 August 2016" "V0.1" "Miscellaneous"
+.SH NAME
+ControlComputer \- Control a microcontroller to receive LiDAR readings
+.SH SYNOPSIS
+ControlComputer [\-o <output>] [\-s <serial>] \-c <config>
+.SH DESCRIPTION
+Connects over a serial connection to an attached microcontroller running arduino-data-reading.ino, and retrieves raw data on vertical micromirror voltage, horizontal micromirror voltage, and distance. These data are then converted to x\-, y\-, and z\-coordinates and output to a comma-separated-variable file.
+.SH OPTIONS
+.TP
+\-s <serial>
+Specifies which serial port to connect over. If not present, all serial ports are searched sequentially until the device is found.
+.TP
+\-o <output>
+Specify a file to output to. If this option is not present, output to STDOUT.
+.TP
+\-c <config>
+Specify a config file to send to the microcontroller.
+.SH EXAMPLES
+.TP
+Process a run from ./run.cfg into ./run.csv using a device on port 0
+ControlComputer -o run.csv -c run.cfg -s 0
+.TP
+Find the serial port to which the microcontroller is connected and then process a run from ./run.cfg into the standard output, piping it into less
+ControlComputer -c run.cfg | less
+.SH AUTHOR
+Alexander Shuping
