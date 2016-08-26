@@ -1,11 +1,10 @@
 #pragma once
 #include <string>
-
+#include "StringOps.cpp"
 
 /**
 * ENUMS
 */
-
 
 //Type of scan to perform
 enum SCAN_TYPE{
@@ -53,10 +52,13 @@ struct params{
 	int         serialPort; // Serial port to connect over
 };
 
+// Configuration file options
 struct config{
-  SCAN_TYPE scanType;       // Type of scan to perform
-	int       scanResolution; // Resolution of scan (in delta-volts per scan). In config file, this is specified in delta-angle per scan.
-	int       numberOfScans;  // Number of complete scans to perform, or -1 to scan until signal 2 is caught
+  double    maxVoltage;      // Maximum voltage for micromirrors
+  bool      manualReadings;  // Whether readings are to be taken manually
+	SCAN_TYPE scanType;        // Type of scan to perform
+	int       scanResolution;  // Resolution of scan (in delta-volts per scan). In config file, this is specified in delta-angle per scan.
+	bool      continuousScans; // Should the scan be performed only once, or multiple times?
 };
 
 
@@ -69,3 +71,5 @@ void   handleSafeTermination (int sig)                      ;
 params processParams         (int argc, char* argv[])       ;
 config processConfig         (const params&)                ;
 void   doScan                (const params&, const config&) ;
+void   printUsageInfo        (strops::BAD_TYPE s)           ;
+void   printUsageInfo        ()                             ;
