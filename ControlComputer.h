@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include "StringOps.cpp"
 
 /**
 * ENUMS
@@ -54,10 +53,10 @@ struct params{
 
 // Configuration file options
 struct config{
-  double    maxVoltage;      // Maximum voltage for micromirrors
+  float     maxVoltage;      // Maximum voltage for micromirrors
   bool      manualReadings;  // Whether readings are to be taken manually
 	SCAN_TYPE scanType;        // Type of scan to perform
-	int       scanResolution;  // Resolution of scan (in delta-volts per scan). In config file, this is specified in delta-angle per scan.
+	float     scanResolution;  // Resolution of scan (in delta-volts per scan). In config file, this is specified in delta-angle per scan.
 	bool      continuousScans; // Should the scan be performed only once, or multiple times?
 };
 
@@ -66,10 +65,8 @@ struct config{
 * FUNCTION PROTOTYPES
 */
 
-
-void   handleSafeTermination (int sig)                      ;
-params processParams         (int argc, char* argv[])       ;
-config processConfig         (const params&)                ;
-void   doScan                (const params&, const config&) ;
-void   printUsageInfo        (strops::BAD_TYPE s)           ;
-void   printUsageInfo        ()                             ;
+//From ControlComputer.cpp
+void        handleSafeTermination (int sig)                      ;
+params      processParams         (int argc, char* argv[])       ;
+config      processConfig         (const params&)                ;
+void        doScan                (const params&, const config&) ;

@@ -39,6 +39,7 @@ int main(int argc, char* argv[]){
 
   const params p = processParams(argc, argv);                   // Process command-line parameters
 	const config c = processConfig(p);                            // Load a configuration file
+	strops::dumpConfigAndParams(c, p);
 	/*const int serialPort = establishSerial(p, c);                 // Establish serial communication with Arduino and send the config file
   
 	if(serialPort == -1){
@@ -83,7 +84,7 @@ params processParams(int argc, char* argv[]){
 
 	if(argc < 3){                      // ControlComputer + -c + <config> = at least 3 parameters
     cout << "Missing parameters.\n"; // Call cannot possibly be valid if there are <3 parameters, so exit immediately
-		printUsageInfo();
+		strops::printUsageInfo();
 		exit(1);
 	}
 
@@ -101,7 +102,7 @@ params processParams(int argc, char* argv[]){
 				if(argv[i+1][0] > '9' || argv[i+1][0] < '0'){ // Sanity check -- First character must be a digit if a positive integer is to be input
           
 			    cout << "Paramater -s must be followed by a positive integer\n";
-			    printUsageInfo();
+			    strops::printUsageInfo();
           exit(1);
         
 				}
@@ -112,7 +113,7 @@ params processParams(int argc, char* argv[]){
 			}catch(...){                                   // Exception thrown if argv[i+1] is not an int
        
 			  cout << "Paramater -s must be followed by an integer\n";
-			  printUsageInfo();
+			  strops::printUsageInfo();
         exit(1);
         
 			}
@@ -127,7 +128,7 @@ params processParams(int argc, char* argv[]){
 			}catch(...){
        
 			  cout << "Paramater -c must be followed by a file path\n";
-			  printUsageInfo();
+			  strops::printUsageInfo();
         exit(1);
         
 			}
@@ -137,18 +138,18 @@ params processParams(int argc, char* argv[]){
       
 			  outParams.outputFile = argv[i+1];
 				outParams.toSTDOUT   = false;
-				i++; // *** *** *** *** *** *** *** *** PLACEHOLDER *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+				i++; 
 			
 			}catch(...){
       
 			  cout << "Paramater -o must be followed by a file path\n";
-			  printUsageInfo();
+			  strops::printUsageInfo();
         exit(1);
         
 			}
 		}else{                                           // Parameter is invalid
       cout << argv[i] << " is not a valid parameter for this program.\n";
-			printUsageInfo();
+			strops::printUsageInfo();
 			cout	<< "Trying to continue anyway...\n\n";
 		}
 	}
@@ -160,26 +161,12 @@ params processParams(int argc, char* argv[]){
 	}else{
 
 			  cout << "Invalid or missing parameters.\n";
-        printUsageInfo();
+        strops::printUsageInfo();
 				exit(1);
 	
 	}
 }
 
-string trimConfigLine(string configLine){
-
-  int i = 0;
-	int len = configLine.length();
-	while(configLine.at(i) != '=' && i+1 < len){ i++; } // Search through the string until '=' is found
-	i++;
-	while(configLine.at(i) == ' ' && i+1 < len){ i++; } // Discard whitespace after '='
-	i++;
-
-  
-
-  return configLine.substr(i, len - i);               // Return the resulting string
-
-}
 
 /**
 * config processConfig(const params&)
@@ -204,7 +191,7 @@ config processConfig(const params& par){
 	configFileStream.open(par.configFile.c_str());                   // Open stream, point to specified file
 	if(!configFileStream.is_open()){
     cout << "Could not open file \"" << par.configFile << "\"\n";  // Check if file exists, exit if not
-		printUsageInfo();
+		strops::printUsageInfo();
 		exit(1);
 	}
   
@@ -216,22 +203,27 @@ config processConfig(const params& par){
     string s;
 		
 		if(!getline(configFileStream, s)){                             // Take a line from the config file
-			printUsageInfo(strops::BAD_CONFIG);                          // If there are no more lines, show error and exit
+			strops::printUsageInfo(strops::BAD_CONFIG, -1, "N/A");       // If there are no more lines, show error and exit
 			exit(1);
 		}
 		
-		configLines[i] = trimConfigLine(s);                            // Trim config option to value only
+		configLines[i] = strops::trimConfigLine(s);                    // Trim config option to value only
 	
   }
 
-	out.maxVoltage = atoi(configLines[0].c_str());                   // Assign max voltage value
+  /**
+	* PLACE NEW CONFIG OPTIONS HERE
+	* DON'T FORGET TO UPDATE NUMBER_OF_CONFIG_OPTIONS AT TOP OF FILE
+	*/
+
+	out.maxVoltage = atof(configLines[0].c_str());                   // Assign max voltage value
 	
 	if(streq(configLines[1], "TRUE")){                               // Assign manual readings value
     out.manualReadings = true;
 	}else if(streq(configLines[1], "FALSE")){
     out.manualReadings = false;
 	}else{
-		printUsageInfo(strops::BAD_CONFIG);
+		strops::printUsageInfo(strops::BAD_CONFIG, 1, configLines[1]);
 		exit(1);
 	}
 
@@ -242,10 +234,23 @@ config processConfig(const params& par){
 	}else if(streq(configLines[2], "SCAN_VERT_ONLY_ZIGZAG")){
     out.scanType = SCAN_VERT_ONLY_ZIGZAG;
 	}else{
-    printUsageInfo(strops::BAD_CONFIG);
+    strops::printUsageInfo(strops::BAD_CONFIG, 2, configLines[2]);
 		exit(1);
 	}
 
+	out.scanResolution = atof(configLines[3].c_str());               // Assign scan resolution value
+
+  if(streq(configLines[4], "TRUE")){                               // Assign continuous scans value
+    out.continuousScans = true;
+	}else if(streq(configLines[4], "FALSE")){
+    out.continuousScans = false;
+	}else{
+    strops::printUsageInfo(strops::BAD_CONFIG, 4, configLines[4]);
+	}
+
+	/* END CONFIG OPTIONS */
+
+	return out;
 
 }
 
@@ -261,22 +266,3 @@ void handleSafeTermination(int sig){
 	exit(sig);
 }
 
-/**
-* void printUsageInfo()
-* 
-* Prints a short message to STDOUT explaining the proper command syntax
-*/
-void printUsageInfo(strops::BAD_TYPE s){
-  if(s == strops::BAD_COMMANDLINE){ 
-    cout << "Usage: ControlComputer [-o <output>] [-s <serial>] -c <config>\n"
-         << "Consult the manual for more information.\n\n";
-  }else if(s == strops::BAD_CONFIG){
-    cout << "Bad config file!\n"
-		     << "Consult the manual!\n\n";
-	}
-}
-
-void printUsageInfo(){
-  cout << "Usage: ControlComputer [-o <output>] [-s <serial>] -c <config>\n"
-       << "Consult the manual for more information.\n\n";
-}
