@@ -36,11 +36,19 @@ using strops::streq;
 int main(int argc, char* argv[]){
 	
 	std::signal(SIGINT, handleSafeTermination); // Add a handler for signal-2 termination
-
+  
+	cout << "Parsing parameters and config...\n";
   const params p = processParams(argc, argv);                   // Process command-line parameters
 	const config c = processConfig(p);                            // Load a configuration file
-	strops::dumpConfigAndParams(c, p);
-	/*const int serialPort = establishSerial(p, c);                 // Establish serial communication with Arduino and send the config file
+	cout << "Done!\n";
+
+	if(p.debugMode){
+	  strops::dumpConfigAndParams(c, p);                          // If debug mode is enabled, dump all read options
+		                                                            //  to verify functionality
+	}
+	
+	/*const int serialPort = establishSerial(p, c);                 // Establish serial communication with Arduino and 
+	                                                                //  send the config file
   
 	if(serialPort == -1){
     cout << "Could not find a responsive serial port. "
@@ -93,13 +101,15 @@ params processParams(int argc, char* argv[]){
 		outParams.outputFile = "NULL"; // This only needs to be set if toSTDOUT is false
 		outParams.toSTDOUT   = true;   // This is unset if -o is present
 		outParams.serialPort = -1  ;   // If this is not set (by -s parameter), program will attempt to auto-detect serial port
+    outParams.debugMode  = false;  // If this is not set (by -d parameter), program will not run in debug mode
 
   for(int i = 1 /*Not a mistake, argv[0] is skipped because it is just the command name*/; i < argc; i++){
     if(streq(argv[i], "-s")){                         // Parameter to set serial port
       
 			try{
         
-				if(argv[i+1][0] > '9' || argv[i+1][0] < '0'){ // Sanity check -- First character must be a digit if a positive integer is to be input
+				if(argv[i+1][0] > '9' || argv[i+1][0] < '0'){ // Sanity check -- First character must be a digit if 
+				                                              //  input is a positive integer
           
 			    cout << "Paramater -s must be followed by a positive integer\n";
 			    strops::printUsageInfo();
@@ -147,6 +157,10 @@ params processParams(int argc, char* argv[]){
         exit(1);
         
 			}
+		}else if(streq(argv[i], "-d")){                  // Parameter to set debug mode (verbose logging)
+
+		  outParams.debugMode = true;
+		
 		}else{                                           // Parameter is invalid
       cout << argv[i] << " is not a valid parameter for this program.\n";
 			strops::printUsageInfo();
@@ -194,8 +208,9 @@ config processConfig(const params& par){
 		strops::printUsageInfo();
 		exit(1);
 	}
-  
-	cout << "Opened \"" << par.configFile << "\". Parsing...\n";     
+  if(par.debugMode){
+   	cout << "Opened \"" << par.configFile << "\". Parsing...\n";     
+	}
 
   string configLines[NUMBER_OF_CONFIG_OPTIONS];                    // Define array for config options
 

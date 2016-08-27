@@ -15,6 +15,9 @@ Specify a file to output to. If this option is not present, output to STDOUT.
 .TP
 \-c <config>
 Specify a config file to send to the microcontroller.
+.TP
+\-d
+Activate debug mode (more verbose logging)
 .SH EXAMPLES
 .TP
 Process a run from ./run.cfg into ./run.csv using a device on port 0

@@ -58,7 +58,7 @@ std::string strops::trimConfigLine(std::string configLine){
 	while(configLine.at(i) == ' ' && i+1 < len){ i++; } // Discard whitespace after '='
 	i++;
 
-  return configLine.substr(i-1, len - (i-1));               // Return the resulting string
+  return configLine.substr(i-1, len - (i-1));         // Return the resulting string
 
 }
 

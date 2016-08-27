@@ -47,7 +47,8 @@ struct lidarData{
 struct params{
   std::string configFile; // Location of config file
   std::string outputFile; // Location of output file
-	bool        toSTDOUT;   // Output to a file or to STDOUT
+	bool        toSTDOUT;   // Output to a file or to STDOUT?
+	bool        debugMode;  // Is debug mode active?
 	int         serialPort; // Serial port to connect over
 };
 
