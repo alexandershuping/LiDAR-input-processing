@@ -1,6 +1,21 @@
 #pragma once
 #include <string>
 
+
+/**
+* CLASSES
+*/
+// Abstract exception class
+class Exception{
+  private:
+	  int _errorCode;
+	
+	public:
+	  virtual ~Exception() = 0;
+		virtual std::string getErrorMessage() = 0;
+}
+
+
 /**
 * ENUMS
 */
@@ -68,6 +83,6 @@ struct config{
 
 //From ControlComputer.cpp
 void        handleSafeTermination (int sig)                      ;
-params      processParams         (int argc, char* argv[])       ;
-config      processConfig         (const params&)                ;
 void        doScan                (const params&, const config&) ;
+params      processParams       (int argc, char* argv[])         ;
+config      processConfig       (const params& p)                ;

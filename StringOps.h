@@ -12,6 +12,15 @@ enum BAD_TYPE{
 	BAD_CONFIG
 };
 
+
+
+/**
+* STRUCTS
+*/
+
+
+
+
 /**
 * FUNCTION PROTOS
 */
@@ -20,4 +29,5 @@ std::string trimConfigLine      (std::string configLine)             ;
 void        dumpConfigAndParams (const config&, const params&)       ;
 void        printUsageInfo      (strops::BAD_TYPE, int, std::string) ;
 void        printUsageInfo      ()                                   ;
+
 }
