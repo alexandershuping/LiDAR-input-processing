@@ -7,13 +7,12 @@
 */
 // Abstract exception class
 class Exception{
-  private:
-	  int _errorCode;
-	
+
 	public:
-	  virtual ~Exception() = 0;
-		virtual std::string getErrorMessage() = 0;
-}
+		virtual int         getErrorCode()     = 0;
+	  virtual std::string getExceptionType() = 0;
+		virtual std::string getErrorMessage()  = 0;
+};
 
 
 /**
@@ -84,5 +83,3 @@ struct config{
 //From ControlComputer.cpp
 void        handleSafeTermination (int sig)                      ;
 void        doScan                (const params&, const config&) ;
-params      processParams       (int argc, char* argv[])         ;
-config      processConfig       (const params& p)                ;

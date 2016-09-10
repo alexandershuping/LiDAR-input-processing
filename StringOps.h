@@ -29,5 +29,7 @@ std::string trimConfigLine      (std::string configLine)             ;
 void        dumpConfigAndParams (const config&, const params&)       ;
 void        printUsageInfo      (strops::BAD_TYPE, int, std::string) ;
 void        printUsageInfo      ()                                   ;
+params      processParams       (int argc, char* argv[])         ;
+config      processConfig       (const params& p)                ;
 
 }
