@@ -12,6 +12,8 @@ class Exception{
 		virtual int         getErrorCode()     = 0;
 	  virtual std::string getExceptionType() = 0;
 		virtual std::string getErrorMessage()  = 0;
+
+		virtual            ~Exception()        = 0;
 };
 
 

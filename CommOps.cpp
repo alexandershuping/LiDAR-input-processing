@@ -25,6 +25,12 @@ PacketDataLengthException::PacketDataLengthException(int code, int length, int e
 }
 
 /**
+* Destroy a PacketDataLengthException 
+*/
+PacketDataLengthException::~PacketDataLengthException(){
+}
+
+/**
 * Returns an error message corresponding with the error code provided in the constructor.
 *
 * If the error code does not correspond to any error message, the end-user is prompted to contact the devs, and given the offending error code.
@@ -99,7 +105,12 @@ packet::packet(LIDAR_COMMAND l, char d[_MAX_PACKET_SIZE], bool raw){     // Init
 	}
 }
 
-packet::packet(LIDAR_COMMAND l, std::string d){ // Initialize packet with string data (string MUST BE <= _MAX_PACKET_SIZE CHARS LONG)
+/**
+* Constructor for string data
+* 
+* string MUST BE <= _MAX_PACKET_SIZE chars long
+*/
+packet::packet(LIDAR_COMMAND l, std::string d){
   if(d.length() > _MAX_PACKET_SIZE){
     throw PacketDataLengthException(0, d.length(), _MAX_PACKET_SIZE); // String length (d.length()) was longer (error code 0) than expected length (this._MAX_PACKET_SIZE)
 	}
@@ -116,17 +127,71 @@ packet::packet(LIDAR_COMMAND l, std::string d){ // Initialize packet with string
 
 }
 
-packet::packet(LIDAR_COMMAND l, int d){         // Initialize packet with int data
+/**
+* Constructor for long data
+*/
+packet::packet(LIDAR_COMMAND l, long d){
   _cmd = l;
-  unsigned char b[_MAX_PACKET_SIZE];
-  for(int i = 0; i < _MAX_PACKET_SIZE; i++){
-    this -> _dat[i] = 0;
-  }
-  packet::_recursiveByteifyInt(d, 0, this -> _dat);
+
+	packet::_recursiveByteifyInt((unsigned long)d, _dat);
+
+	if(d >= 0){
+    _dat[_MAX_PACKET_SIZE-1] = 1;
+	}else{
+    _dat[_MAX_PACKET_SIZE-1] = 0;
+	}
+
+	
 }
 
+/**
+* Constructor for int data
+*/
+packet::packet(LIDAR_COMMAND l, int d){
+  _cmd = l;
+  packet::_recursiveByteifyInt((unsigned long)d, _dat);
+
+	if(d >= 0){
+    _dat[_MAX_PACKET_SIZE-1] = 1;
+	}else{
+    _dat[_MAX_PACKET_SIZE-1] = 0;
+	}
+}
+
+/**
+* Constructor for unsigned long data
+*/
+packet::packet(LIDAR_COMMAND l, unsigned long d){
+  _cmd = l;
+	packet::_recursiveByteifyInt(d, _dat);
+}
+
+/**
+* Constructor for unsigned int data
+*/
+packet::packet(LIDAR_COMMAND l, unsigned int d){
+  _cmd = l;
+  packet::_recursiveByteifyInt((unsigned long)d, _dat);
+}
+
+/**
+* Constructor for double data
+* 
+* Multiplies doubles by _DOUBLE_PRECISION to convert them to integer types
+* 
+* Currently inefficient. TODO: make more efficient.
+*/
 packet::packet(LIDAR_COMMAND l, double d){
-  
+  _cmd = l;
+
+	unsigned long o = (unsigned long)(d * _DOUBLE_PRECISION);
+	packet::_recursiveByteifyInt(o, _dat);
+	if(d >= 0){
+    _dat[_MAX_PACKET_SIZE-1] = 1;
+	}else{
+    _dat[_MAX_PACKET_SIZE-1] = 0;
+	}
+
 } 
 
 /**
@@ -136,7 +201,7 @@ packet::packet(LIDAR_COMMAND l, double d){
 *
 * The return value will always be zero, as long as the function is called with index=0.
 */
-int packet::_recursiveByteifyInt(int i, unsigned int index, unsigned char buf[_MAX_PACKET_SIZE]){
+unsigned long packet::_recursiveByteifyInt(unsigned long i, unsigned int index, unsigned char buf[_MAX_PACKET_SIZE]){
 
   unsigned char byteindex = floor((double)index / 8.0);
 	unsigned char bitindex  = index % 8;
@@ -147,17 +212,44 @@ int packet::_recursiveByteifyInt(int i, unsigned int index, unsigned char buf[_M
 
 	}
 
-	int remaining = _recursiveByteifyInt(i, index+1, buf);
+	unsigned long remaining = _recursiveByteifyInt(i, index+1, buf);
 
 	if(remaining >= pow(2,index)){
     buf[byteindex] |= (unsigned char)pow(2,bitindex);
     remaining -= pow(2,index);
 	}
 
-
-
 	return remaining;
 
+}
+void packet::_recursiveByteifyInt(unsigned long i, unsigned char buf[_MAX_PACKET_SIZE]){
+  _recursiveByteifyInt(i, 0, buf);
+}
+
+/**
+* Copy constructor
+*/
+packet::packet(const packet& first){
+  _cmd = first._cmd;
+  for(int i = 0; i < _MAX_PACKET_SIZE; i++){
+    _dat[i] = first._dat[i];
+	}
+}
+
+/**
+* Destructor
+*/
+packet::~packet(){
+}
+
+/**
+* Assignment operator
+*/
+packet& packet::operator=(const packet& first){
+  _cmd = first._cmd;
+	for(int i = 0; i < _MAX_PACKET_SIZE; i++){
+    _dat[i] = first._dat[i];
+	}
 }
 
 /**
@@ -191,10 +283,10 @@ std::string packet::getString(){
 }
 
 /**
-* Get int data from a packet
+* Get unsigned long data from a packet
 */
-int packet::getInt(){
-  int out = 0;
+unsigned long packet::getUnsignedLong(){
+  unsigned long out = 0;
   for(int byteindex = 0; byteindex < _MAX_PACKET_SIZE; byteindex++){
 	  for(int bitindex = 0; bitindex < 8; bitindex++){
       if( (this -> _dat[byteindex] & (unsigned char)pow(2, bitindex)) != 0 ){
@@ -207,11 +299,77 @@ int packet::getInt(){
 }
 
 /**
+* Get long data from a packet
+*/
+long packet::getLong(){
+  bool sign;
+  
+	if(_dat[_MAX_PACKET_SIZE - 1] == 1){
+    sign = true;
+	}else{
+    sign = false;
+	}
+  _dat[_MAX_PACKET_SIZE - 1] = 0;
+
+	unsigned long raw = this -> getUnsignedLong();
+
+	return sign ? (long)raw : (long)(raw * -1);
+}
+
+/**
+* Get unsigned int data from a packet
+*/
+unsigned int packet::getUnsignedInt(){
+  return (unsigned int)this -> getUnsignedLong();
+}
+
+/*
+* Get int data from a packet
+*/
+int packet::getInt(){
+  bool sign;
+  
+	if(_dat[_MAX_PACKET_SIZE - 1] == 1){
+    sign = true;
+	}else{
+    sign = false;
+	}
+  _dat[_MAX_PACKET_SIZE - 1] = 0;
+
+	unsigned long raw = this -> getUnsignedLong();
+
+	return sign ? (int) raw : (int)(raw * -1);
+}
+
+/**
+* Get double data from a packet
+*/
+double packet::getDouble(){
+  long raw = this -> getLong();
+  return ((double)raw / _DOUBLE_PRECISION);
+}
+
+/**
 * Get LIDAR_COMMAND from packet
 */
 LIDAR_COMMAND packet::getCommand(){
   
   return this -> _cmd;
 }
+
+
+/**
+* Class functions for class connection
+*/
+connection::connection(const config& c, const params& p){
+//  if(p.serialPort == -1){
+//    port = probe();
+//  }else{
+	  port = p.serialPort;
+//	}
+  
+}
+
+
 
 /*END OF NAMESPACE -- THERE SHOULD BE NO CODE BEYOND THIS BRACKET -->*/}

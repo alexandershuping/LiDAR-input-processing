@@ -15,10 +15,34 @@ enum BAD_TYPE{
 
 
 /**
-* STRUCTS
+* CLASSES
 */
 
+/**
+* Class MalformedInputException
+* 
+* Thrown when input does not match an expected form
+* 
+* Error codes show what form was expected for the value:
+*  6 -- General mismatch
+*  1 -- Name of existing file expected
+*  2 -- Expected config file to have more lines
+*  3 -- Expected "TRUE" or "FALSE"
+*  4 -- Expected an integer value
+*  5 -- Invalid or missing parameters
+*/
+class MalformedInputException : public Exception{
+  private:
+    std::string _badText;
+		int         _code;
+	public:
+	                      MalformedInputException(int code, std::string badText);
+												~MalformedInputException();
 
+	  virtual int         getErrorCode();
+    virtual std::string getExceptionType();
+		virtual std::string getErrorMessage();
+};
 
 
 /**

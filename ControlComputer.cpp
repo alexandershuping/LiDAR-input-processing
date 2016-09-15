@@ -35,8 +35,20 @@ int main(int argc, char* argv[]){
 	std::signal(SIGINT, handleSafeTermination); // Add a handler for signal-2 termination
 
 	cout << "Parsing parameters and config...\n";
-  const params p = strops::processParams(argc, argv);           // Process command-line parameters
-	const config c = strops::processConfig(p);                    // Load a configuration file
+  
+	params p;
+	config c;
+	
+	try{
+	p = strops::processParams(argc, argv);           // Process command-line parameters
+	c = strops::processConfig(p);                    // Load a configuration file
+	}catch(strops::MalformedInputException e){
+    cout << "\nError found in input: Code " << e.getErrorCode() <<"\n" 
+		     << e.getErrorMessage() << "\n\n"
+				 << "Execution cannot continue. Halting...\n\n";
+
+		exit(e.getErrorCode());
+	}
 	cout << "Done!\n";
 
 	if(p.debugMode){
@@ -46,8 +58,10 @@ int main(int argc, char* argv[]){
 
   for(int i = 2312; i < 8978; i+=17){
 	  cops::packet pak(cops::LIDAR_RSP, i);
+		cops::packet pak2(cops::LIDAR_SET, (double)i / 100.0);
 		cout << "Assembled packet with command " << pak.getCommand() << " and data " << pak.getInt() << '\n'
-		     << "   Input datum was " << i << '\n';
+		     << "Assembled packet with command " << pak2.getCommand() << " and data " << pak2.getDouble() << '\n'
+		     << "   Input datum was " << i << "\n\n";
 	}
 
 	/*const int serialPort = establishSerial(p, c);                 // Establish serial communication with Arduino and
@@ -76,6 +90,13 @@ int main(int argc, char* argv[]){
 	     << " | Serial port: " << p.serialPort << std::endl;
 */}
 
+
+/**
+* Blank destructor for Exception superclass for polymorphism reasons
+*/
+Exception::~Exception(){
+
+}
 
 
 

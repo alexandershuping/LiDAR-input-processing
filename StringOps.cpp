@@ -18,6 +18,64 @@ using std::string;
 namespace strops{
 
 /**
+* Class functions for class MalformedInputException
+*/
+MalformedInputException::MalformedInputException(int code, string badText){
+  _code    = code;
+	_badText = badText;
+}
+
+MalformedInputException::~MalformedInputException(){
+  delete new char*;
+}
+
+int MalformedInputException::getErrorCode(){
+  return _code;
+}
+
+string MalformedInputException::getExceptionType(){
+  return "MalformedInputException";
+}
+
+string MalformedInputException::getErrorMessage(){
+  string s = "Malformed input on \"";
+	  s.append(_badText);
+    s.append("\"\n");
+	
+	switch(_code){
+    case 6:
+		  s.append("Unknown / general error.\n");
+			s.append("  Try sending an angry e-mail to the developers?");
+			break;
+	  case 1:
+		  s.append("Expected a path to a file.\n");
+			s.append("  Check spelling of path, and make sure that file exists");
+			break;
+		case 2:
+		  s.append("Configuration input has too few lines.\n");
+			s.append("  Add more lines. Check the example config file.");
+			break;
+		case 3:
+		  s.append("Expected \"TRUE\" or \"FALSE\"\n");
+			s.append("  Check your config file. See the example file for correct syntax");
+			break;
+		case 4:
+		  s.append("Expected an integer value\n");
+			s.append("  Check your config file. See the example file for correct syntax");
+			break;
+		case 5:
+		  s.append("Invalid or missing parameters.\n");
+			s.append("  See manpage or github for proper syntax");
+			break;
+		default:
+		  s.append("Unexpected error code.\n");
+			s.append("  Try sending an extremely angry e-mail to the developers, chiding them for not updating their exception messages.");
+	}
+
+	return s;
+}
+
+/**
 * bool streq(std::string a, std::string b)
 * 
 * Checks whether two strings are equal
@@ -103,7 +161,6 @@ void dumpConfigAndParams(const config& c, const params& p){
 				 case SCAN_VERT_ONLY_ZIGZAG:
 				   cout << " (SCAN_VERT_ONLY_ZIGZAG)\n";
 					 break;
-
 				 default:
 				   cout << " (SOMETHING_HAS_GONE_HORRIBLY_WRONG_CALL_THE_DEVS)\n";
 			 }
@@ -165,9 +222,7 @@ config processConfig(const params& par){
 	
 	configFileStream.open(par.configFile.c_str());                   // Open stream, point to specified file
 	if(!configFileStream.is_open()){
-    cout << "Could not open file \"" << par.configFile << "\"\n";  // Check if file exists, exit if not
-		printUsageInfo();
-		exit(1);
+		throw MalformedInputException(1, par.configFile);
 	}
   if(par.debugMode){
    	cout << "Opened \"" << par.configFile << "\". Parsing...\n";     
@@ -179,8 +234,7 @@ config processConfig(const params& par){
     string s;
 		
 		if(!getline(configFileStream, s)){                             // Take a line from the config file
-			printUsageInfo(BAD_CONFIG, -1, "N/A");                       // If there are no more lines, show error and exit
-			exit(1);
+			throw MalformedInputException(2, "n/a");                     // Unexpected end of config file
 		}
 		
 		configLines[i] = trimConfigLine(s);                            // Trim config option to value only
@@ -199,8 +253,7 @@ config processConfig(const params& par){
 	}else if(streq(configLines[1], "FALSE")){
     out.manualReadings = false;
 	}else{
-	printUsageInfo(BAD_CONFIG, 1, configLines[1]);
-		exit(1);
+	  throw MalformedInputException(3, configLines[1]);
 	}
 
 	if(streq(configLines[2], "SCAN_ZIGZAG")){                        // Assign scan type value
@@ -210,8 +263,7 @@ config processConfig(const params& par){
 	}else if(streq(configLines[2], "SCAN_VERT_ONLY_ZIGZAG")){
     out.scanType = SCAN_VERT_ONLY_ZIGZAG;
 	}else{
-    printUsageInfo(BAD_CONFIG, 2, configLines[2]);
-		exit(1);
+	  throw MalformedInputException(4, configLines[2]);
 	}
 
 	out.scanResolution = atof(configLines[3].c_str());               // Assign scan resolution value
@@ -221,7 +273,7 @@ config processConfig(const params& par){
 	}else if(streq(configLines[4], "FALSE")){
     out.continuousScans = false;
 	}else{
-    printUsageInfo(BAD_CONFIG, 4, configLines[4]);
+	  throw MalformedInputException(3, configLines[4]);
 	}
 
 	/* END CONFIG OPTIONS */
@@ -248,9 +300,7 @@ config processConfig(const params& par){
 params processParams(int argc, char* argv[]){
   
 	if(argc < 3){                      // ControlComputer + -c + <config> = at least 3 parameters
-    cout << "Missing parameters.\n"; // Call cannot possibly be valid if there are <3 parameters, so exit immediately
-		printUsageInfo();
-		exit(1);
+	  throw MalformedInputException(5, "[not enough args]");
 	}
 
 	params outParams;
@@ -268,10 +318,7 @@ params processParams(int argc, char* argv[]){
 				if(argv[i+1][0] > '9' || argv[i+1][0] < '0'){ // Sanity check -- First character must be a digit if 
 				                                              //  input is a positive integer
           
-			    cout << "Paramater -s must be followed by a positive integer\n";
-			    printUsageInfo();
-          exit(1);
-        
+          throw MalformedInputException(4, argv[i+1]);
 				}
 
 			  outParams.serialPort = atoi(argv[i+1]);      // Serial port set
@@ -279,10 +326,7 @@ params processParams(int argc, char* argv[]){
 			
 			}catch(...){                                   // Exception thrown if argv[i+1] is not an int
        
-			  cout << "Paramater -s must be followed by an integer\n";
-			  printUsageInfo();
-        exit(1);
-        
+        throw MalformedInputException(4, argv[i+1]);
 			}
 		
 		}else if(streq(argv[i], "-c")){                  // Parameter to set config file location
@@ -294,9 +338,7 @@ params processParams(int argc, char* argv[]){
 			
 			}catch(...){
        
-			  cout << "Paramater -c must be followed by a file path\n";
-			  printUsageInfo();
-        exit(1);
+			 throw MalformedInputException(1, argv[i+1]);
         
 			}
 		}else if(streq(argv[i], "-o")){                  // Parameter to set output file location
@@ -309,10 +351,8 @@ params processParams(int argc, char* argv[]){
 			
 			}catch(...){
       
-			  cout << "Paramater -o must be followed by a file path\n";
-			  printUsageInfo();
-        exit(1);
-        
+       throw MalformedInputException(1, argv[i+1]);
+
 			}
 		}else if(streq(argv[i], "-d")){                  // Parameter to set debug mode (verbose logging)
 
@@ -330,10 +370,13 @@ params processParams(int argc, char* argv[]){
 		return outParams;
 	
 	}else{
-
-			  cout << "Invalid or missing parameters.\n";
-        printUsageInfo();
-				exit(1);
+ 
+    string s = "";
+		for(int i = 0; i < argc; i++){
+      s.append(argv[i]);
+			s.append(" ");
+		}
+    throw MalformedInputException(5, s);
 	
 	}
 }
