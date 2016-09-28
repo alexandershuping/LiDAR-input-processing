@@ -1,0 +1,192 @@
+/*
+LTC1661 DAC Control System
+Version 1.0
+
+Written by Alex Shuping
+7 July 2016
+Last update: 7 July 2016
+*/
+
+#define delicious_pi 3.1415926535
+
+#define sleepTime  0
+
+#define updateAReg 9
+#define updateBReg 10
+#define doSleep    15
+#define doWakey    1
+
+#define p_DAT      4
+#define p_CLK      6
+#define p_CS       3
+
+void updateDAC(unsigned int, unsigned char, int, int, int);
+void writeDataToDAC(unsigned char, int, int);
+void doAck(bool, String, int);
+void doAck(bool, int);
+void doAck(bool, String);
+void doAck(bool);
+
+bool sleeping = false;
+unsigned int curr_Vout = 0;
+unsigned int sav_Vout  = 0;
+int mode = 0;
+/*
+ * Mode values:
+ * 0 - constant voltage
+ * 1 - sine wave
+ * 2 - triangle wave
+ */
+double wave_ctr = 0;
+int wave_res = 10;
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Listening for input. Type h for help.");
+  pinMode(p_DAT, OUTPUT);
+  pinMode(p_CLK, OUTPUT);
+}
+
+void loop() {
+  if(Serial.available()){
+    char re = Serial.read();
+    if(re=='s'){
+      sleeping = true;
+      updateDAC(curr_Vout, doSleep, p_DAT, p_CLK, p_CS);
+      doAck(true, "Sleeping. \n");
+    }else if(re=='w'){
+      sleeping = false;
+      updateDAC(curr_Vout, doWakey, p_DAT, p_CLK, p_CS);
+      doAck(true, "Waking. \n");
+    }else if(re=='v'){
+      int i = Serial.parseInt();
+      if(i>=0 && i<1024){
+        doAck(true, "Setting voltage to: ", i);
+        curr_Vout = i;
+        sav_Vout = i;
+      }else{
+        doAck(false, "Voltage not in range 0-1023: ", i);
+      }
+      
+    }
+    else if(re=='m'){
+      char mod;
+      doAck(true, "Mode change activated. Enter new mode.\n");
+      do{
+        mod = Serial.read();
+      }while(mod < 32);
+      switch(mod){
+        case 'c':
+          mode = 0;
+          doAck(true, "Entered constant-voltage mode.\n");
+          curr_Vout = sav_Vout;
+          break;
+        case 's':
+          if(mode==0){sav_Vout = curr_Vout;}
+          mode = 1;
+          doAck(true, "Entered sine-wave mode.\n");
+          break;
+        case 't':
+          if(mode==0){sav_Vout = curr_Vout;}
+          mode = 2;
+          doAck(true, "Entered triangle-wave mode.\n");
+          break;
+        default:
+          doAck(false, "Invalid mode.\n");
+      }
+    }else if(re=='h'){
+    doAck(true, "LTC1661 DAC Control System\n");
+    Serial.println("Written by Alex Shuping");
+    Serial.println("Command list: \nh -- this help text \nm -- set mode: \n  c -- constant-voltage mode\n  s -- sine-wave mode\n  t -- triangle-wave mode\nv -- voltage for constant-voltage mode\n  syntax: vn, where n is a value from 0-1023.\n          new voltage will be (n/1024) * Vref of the chip.\ns -- enter sleep mode\nw -- wake from sleep mode\nr -- resolution of sin/triangle wave\n  syntax: rn, where n is a number greater than zero.\n          Each clock cycle, the counter for the wave will increase by 1/n.");
+  }else if(re=='r'){
+    int r = Serial.parseInt();
+    if(r<=0){
+      doAck(false, "Cannot parse zero or sub-zero value: ", r);
+    }else{
+      wave_res = r;
+      doAck(true, "Wave resolution set to: ", r);
+    }
+  }else{
+    doAck(false, "Command not recognized\n");
+  }
+    while(Serial.available()){Serial.read();}
+  }
+  if(!sleeping){
+    switch(mode){
+      case 0:
+        updateDAC(curr_Vout, updateAReg, p_DAT, p_CLK, p_CS);
+        break;
+      case 1:
+        curr_Vout = abs(sin(wave_ctr) * (double)sav_Vout);
+        wave_ctr += 1.0 / (double)wave_res;
+        if(wave_ctr > delicious_pi){wave_ctr = 0;}
+        updateDAC(curr_Vout, updateAReg, p_DAT, p_CLK, p_CS);
+        break;
+      case 2:
+        curr_Vout = wave_ctr > (delicious_pi / 2) ? (delicious_pi - wave_ctr) * ((double)sav_Vout * 2 / delicious_pi) : wave_ctr * ((double)sav_Vout * 2 / delicious_pi);
+        wave_ctr += 1.0 / (double)wave_res;
+        if(wave_ctr > delicious_pi){wave_ctr = 0;}
+        updateDAC(curr_Vout, updateAReg, p_DAT, p_CLK, p_CS);
+        break;
+      default:
+        doAck(false, "Mode is in invalid state, switching to mode 0. State was: ", mode);
+        mode = 0;
+        break;
+    }
+    
+  }
+  delay(0);
+}
+
+void updateDAC(unsigned int newVOut, unsigned char daFlags, int pin_DAT, int pin_CLK, int pin_CS){
+  unsigned int output = newVOut << 2;
+  output |= (daFlags << 12);
+  digitalWrite(pin_CS, HIGH);
+  //DEBUG:Serial.print("Data: ");
+  //DEBUG:Serial.println(output);
+  writeDataToDAC(output, pin_DAT, pin_CLK);
+  digitalWrite(pin_CS, LOW);
+}
+
+void writeDataToDAC(unsigned int data, int pin_DAT, int pin_CLK){
+  for(int i = 15; i >= 0; i--){
+    if(((data & (1 << i)) >> i) == 1){
+      //DEBUG:Serial.println("Writing 1");
+      digitalWrite(pin_DAT, HIGH);
+    }else{
+      //DEBUG:Serial.println("Writing 0");
+    }
+    digitalWrite(pin_CLK, HIGH);
+    delay(sleepTime);
+    digitalWrite(pin_CLK, LOW);
+    digitalWrite(pin_DAT, LOW);
+    delay(sleepTime);
+  }
+}
+
+void doAck(bool suc, String msg){
+  if(suc){
+    Serial.print("Command OK. ");
+  }else{
+    Serial.print("Command NOT OK. ");
+  }
+  Serial.print(msg);
+}
+
+void doAck(bool suc, String msg, int code){
+  doAck(suc, msg);
+  Serial.println(code);
+}
+
+void doAck(bool suc, int code){
+  String msg = "Status: ";
+  doAck(suc, msg);
+  Serial.println(code);
+}
+
+void doAck(bool suc){
+  String msg = "Status: ";
+  int code = suc ? 0 : 1;
+  doAck(suc, msg);
+  Serial.println(code);
+}
