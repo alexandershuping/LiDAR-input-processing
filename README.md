@@ -1,5 +1,13 @@
 # LiDAR-input-processing
 
+Q:
+
+Does it compile right now?
+
+A:
+# no,
+(but I'm working on it)
+
 Command syntax: ControlComputer [-d] [-o \<output\>] [-s \<serial\>] -c \<config\>
 
   -d
