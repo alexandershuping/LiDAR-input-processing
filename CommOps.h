@@ -1,7 +1,10 @@
 #pragma once
 
-#include "ControlComputer.h"
 #include <string>
+#include <SerialStream.h>
+
+using std::string;
+using namespace LibSerial;
 
 namespace cops{
 
@@ -10,9 +13,10 @@ namespace cops{
 * ENUM DEFINITIONS
 */
 enum CONNECTION_STATE{
-  STATE_DISCONNECTED,
-	STATE_CONNECTED,
-	STATE_ERROR
+  STATE_DISCONNECTED,  // SerialStream is closed, and microcontroller knows this
+	STATE_CONNECTED,     // SerialStream is open,   and microcontroller knows this
+	STATE_ERROR,         // SerialStream is open,   but microcontroller may not know this
+	STATE_FORCED_CLOSED  // SerialStream is closed, but microcontroller may not know this
 
 };
 
@@ -21,13 +25,17 @@ enum LIDAR_COMMAND{
   LIDAR_SYN    = 0x00, // SYNc for handshake                           -- Sent     to   microcontroller to establish a connection
 	LIDAR_SYNACK = 0x01, // SYNc ACKnowledge for handshake               -- Received from microcontroller to indicate successful connection
 	LIDAR_ACK    = 0x02, // ACKnowledge for handshake                    -- Sent     to   microcontroller to complete a connection
-	LIDAR_SET    = 0x03, // SET microcontroller setting                  -- Sent     to   microcontroller to send settings
 	LIDAR_GET    = 0x04, // GET data from microcontroller                -- Sent     to   microcontroller when data are requested
 	LIDAR_RSP    = 0x05, // ReSPonse to data request                     -- Received from microcontroller, indicates that data are being sent
 	LIDAR_DISCON = 0x06, // DISCONnect with microcontroller              -- Sent     to   microcontroller to indicate that data collection is finished and the connection is being terminated
 	LIDAR_DSCACK = 0x07, // DiSConnect ACKnowledge from microcontroller  -- Received from microcontroller to confirm that disconnection was successful
-  LIDAR_PROBE  = 0x08, // connection PROBE                             -- Sent     to   unknown serial port to determine whether a compatible microcontroller is attached
-	LIDAR_PRBACK = 0x09  // connection PRoBe ACKnowledge                 -- Received from microcontroller to confirm that it is connected over the tested serial port
+  LIDAR_NUL    = 0x0A  // NULl packet                                  -- Dummy packet that shouldn't be sent either way
+
+/*[DEPRECATEDLIDAR_PROBE  = 0x08, // connection PROBE                             -- Sent     to   unknown serial port to determine whether a compatible microcontroller is attached*/
+
+/*[DEPRECATED	LIDAR_PRBACK = 0x09  // connection PRoBe ACKnowledge                 -- Received from microcontroller to confirm that it is connected over the tested serial port*/
+
+/*[DEPRECATED] LIDAR_SET = 0x03, // SET microcontroller setting        -- Sent     to   microcontroller to send settings*/
 
 };
 
@@ -35,6 +43,18 @@ enum LIDAR_COMMAND{
 /**
 * CLASS DEFINITIONS
 */
+
+// Abstract exception class
+class Exception{
+
+  public:
+	  virtual int         getErrorCode()     = 0;
+	  virtual std::string getExceptionType() = 0;
+	  virtual std::string getErrorMessage()  = 0;
+
+    virtual            ~Exception()        = 0;
+};
+									
 
 /**
 * class PacketDataLengthException
@@ -83,29 +103,39 @@ class packet{
 		void          _recursiveByteifyInt(unsigned long, unsigned char[_MAX_PACKET_SIZE]);
 
 	public:
-	                packet(LIDAR_COMMAND l, char d[_MAX_PACKET_SIZE], bool raw); // Initialize packet with command and data
+	                packet(LIDAR_COMMAND l, char d[_MAX_PACKET_SIZE]); // Initialize packet with command and data
 									packet(LIDAR_COMMAND l, std::string   d ); // Initialize packet with command and string data (string must be MAX 8 chars)
 									packet(LIDAR_COMMAND l, long          d ); // Initialize packet with command and long data
 									packet(LIDAR_COMMAND l, int           d ); // Initialize packet with command and int data
 									packet(LIDAR_COMMAND l, unsigned long d ); // Initialize packet with command and unsigned long data
 									packet(LIDAR_COMMAND l, unsigned int  d ); // Initialize packet with command and unsigned int data
 									packet(LIDAR_COMMAND l, double        d ); // Initialize packet with command and double data
+									packet();                                  // Blank constructor = meaningless packet. Data will be blank, and command will be LIDAR_NUL
 
                   packet(const packet& first              ); // Copy constructor
 							 	 ~packet(                                 ); // Destructor
 					packet& operator=(const packet& first           ); // Assignment operator
 
-    int           getMaxPacketSize();                        // Get the maximum amount of data that can be stored in a packet
+    static int    getMaxPacketSize();                        // Get the maximum amount of data that can be stored in a packet
 
-		void          getData(char buf[_MAX_PACKET_SIZE]);       // Get raw      data from packet, and store it in buf
-		std::string   getString();                               // Get string   data from packet
-		unsigned long getUnsignedLong();                         // Get uns long data from packet  
-		long          getLong();                                 // Get long     data from packet
-		unsigned int  getUnsignedInt();                          // Get uns int  data from packet
-		int           getInt();                                  // Get int      data from packet
-		double        getDouble();                               // Get double   data from packet
-		LIDAR_COMMAND getCommand();                              // Get command       from packet
+		void          getData(char buf[_MAX_PACKET_SIZE]) const; // Get raw      data from packet, and store it in buf
+		std::string   getString() const;                         // Get string   data from packet
+		unsigned long getUnsignedLong() const;                   // Get uns long data from packet  
+		long          getLong() const;                           // Get long     data from packet
+		unsigned int  getUnsignedInt() const;                    // Get uns int  data from packet
+		int           getInt() const;                            // Get int      data from packet
+		double        getDouble() const;                         // Get double   data from packet
+		LIDAR_COMMAND getCommand() const;                        // Get command       from packet
 
+    std::string   toString() const;                          // Dump packet data to string
+};
+
+struct thread_io{
+  bool released;
+	bool dataAvailable;
+	int port;
+	SerialStream* ser;
+	unsigned char data;
 };
 
 /**
@@ -117,17 +147,26 @@ class packet{
 class connection{
 
   private:
-	  int              port;
-		CONNECTION_STATE state;
+	  string           _port;
+		CONNECTION_STATE _state;
+		int              _baud_rate;
+		int              _timeout;
+		SerialStream     _ser;
+
+		bool             _doHandshake();
+
+		static void      _serialThreadBlock(thread_io*);
+    static void      _releaseHandle(thread_io*);
 
 	public:
-	                   connection(const config&, const params&);
+	                   connection(string port, int baudRate, int timeout);
+		bool             open();                         // True = handshake successful, false = handshake unsuccessful
+		bool             close(bool);                    // True = disconnect handshake successful, false = handshake unsuccessful
 		CONNECTION_STATE getConnectionState();
-		int              getPort();
-		bool             send(packet);
-
-		static int       probe();
-
+		string           getPort();
+		int              getBaudRate();
+		bool             send(const packet&);      // True = packet sent and ack'ed, false = packet not ack'ed by microcontroller
+		packet           get(int timeout, bool& success);// DO NOT TRY TO ACCESS THE PACKET WITHOUT CHECKING THAT SUCCESS IS TRUE. If the get operation times out, the packet will be meaningless.
 };
 
 /**

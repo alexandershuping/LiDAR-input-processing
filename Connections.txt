@@ -1,0 +1,60 @@
+Connection diagram:
+
+***************
+*Packet header*
+*   (1 byte)  *
+***************
++ Packet body +
++   (8 bytes) +
++++++++++++++++
+
+
+Control computer          |         Microcontroller
+                          |
+                *******   |
+                * SYN *   |
+                *******  -->
+                +blank+   |   ********                
+                +++++++   |   *SYNACK*               
+                         <--  ********               
+													|   + blank+                 
+													|   ++++++++              
+								*******   |
+								* ACK *   |
+								*******  -->
+								+blank+   |
+								+++++++   |
+                          |
+
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xx					*********     |                                       xx
+xx			  	* SET   *     |                                       xx
+xx			  	********* -[repeated for all options]->               xx
+xx			  	+config +     |                                       xx
+xx		  		+options+     |                                       xx
+xx	  			+++++++++     |                                       xx
+xx  				Deprecated by EEPROM pre-setting. Do not use.         xx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+						              |      *********
+													|      *  DAT  *
+			<-[for each data reading]- *********
+													|      +lidar  +
+													|      +reading+
+													|      +++++++++
+					********        |
+					*DISCON*  -[when connection must be terminated]->
+					********        |
+					+blank + <-[when data reading is finished]-
+					++++++++        |
+					                |     ********
+												 <--    *DSCACK*
+													|     ********
+												 -->    +blank +
+												  |     ++++++++
+
+For implementation details, see CommOps.h

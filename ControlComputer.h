@@ -70,11 +70,13 @@ struct params{
 
 // Configuration file options
 struct config{
-  float     maxVoltage;      // Maximum voltage for micromirrors
+  float     supplyVoltage;   // Output voltage of onboard supply
+  float     maxVoltage;      // Maximum voltage for micromirrors 
   bool      manualReadings;  // Whether readings are to be taken manually
 	SCAN_TYPE scanType;        // Type of scan to perform
 	float     scanResolution;  // Resolution of scan (in delta-volts per scan). In config file, this is specified in delta-angle per scan.
 	bool      continuousScans; // Should the scan be performed only once, or multiple times?
+	int       baudRate;
 };
 
 

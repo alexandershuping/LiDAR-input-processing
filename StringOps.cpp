@@ -8,7 +8,7 @@
 #include "StringOps.h"
 #include "ControlComputer.h"
 
-#define NUMBER_OF_CONFIG_OPTIONS 5 // How many lines does the config file have? (used for config-file processing loops)
+#define NUMBER_OF_CONFIG_OPTIONS 7 // How many lines does the config file have? (used for config-file processing loops)
 
 //Begin Lib Code
 
@@ -145,6 +145,7 @@ void dumpConfigAndParams(const config& c, const params& p){
 
 	cout << "Beginning configuration and parameter dump...\n"
 	     << "CONFIG:\n"
+			 << "  supplyVoltage   = " << c.supplyVoltage  << '\n'
 			 << "  maxVoltage      = " << c.maxVoltage     << '\n'
 			 << "  manualReadings  = " << c.manualReadings << '\n'
 			 << "  scanType        = " << c.scanType;
@@ -167,6 +168,7 @@ void dumpConfigAndParams(const config& c, const params& p){
 
 	cout << "  scanResolution  = " << c.scanResolution  << '\n'
 	     << "  continuousScans = " << c.continuousScans << '\n'
+			 << "  baudRate        = " << c.baudRate        << '\n'
 			 << '\n'
 			 << "PARAMS:\n"
 			 << "  configFile      = " << p.configFile      << '\n'
@@ -242,39 +244,43 @@ config processConfig(const params& par){
   }
 
   /**
-	* PLACE NEW CONFIG OPTIONS HERE
+	* PLACE CONFIG OPTIONS BELOW
 	* DON'T FORGET TO UPDATE NUMBER_OF_CONFIG_OPTIONS AT TOP OF FILE
 	*/
 
-	out.maxVoltage = atof(configLines[0].c_str());                   // Assign max voltage value
+  out.supplyVoltage = atof(configLines[0].c_str());                // Assign supply voltage value
+
+  out.maxVoltage = atof(configLines[1].c_str());                   // Assign max voltage value
 	
-	if(streq(configLines[1], "TRUE")){                               // Assign manual readings value
+	if(streq(configLines[2], "TRUE")){                               // Assign manual readings value
     out.manualReadings = true;
-	}else if(streq(configLines[1], "FALSE")){
+	}else if(streq(configLines[2], "FALSE")){
     out.manualReadings = false;
 	}else{
-	  throw MalformedInputException(3, configLines[1]);
+	  throw MalformedInputException(3, configLines[2]);
 	}
 
-	if(streq(configLines[2], "SCAN_ZIGZAG")){                        // Assign scan type value
+	if(streq(configLines[3], "SCAN_ZIGZAG")){                        // Assign scan type value
     out.scanType = SCAN_ZIGZAG;
-	}else if(streq(configLines[2], "SCAN_HORZ_ONLY_ZIGZAG")){
+	}else if(streq(configLines[3], "SCAN_HORZ_ONLY_ZIGZAG")){
     out.scanType = SCAN_HORZ_ONLY_ZIGZAG;
-	}else if(streq(configLines[2], "SCAN_VERT_ONLY_ZIGZAG")){
+	}else if(streq(configLines[3], "SCAN_VERT_ONLY_ZIGZAG")){
     out.scanType = SCAN_VERT_ONLY_ZIGZAG;
 	}else{
-	  throw MalformedInputException(4, configLines[2]);
+	  throw MalformedInputException(4, configLines[3]);
 	}
 
-	out.scanResolution = atof(configLines[3].c_str());               // Assign scan resolution value
+	out.scanResolution = atof(configLines[4].c_str());               // Assign scan resolution value
 
-  if(streq(configLines[4], "TRUE")){                               // Assign continuous scans value
+  if(streq(configLines[5], "TRUE")){                               // Assign continuous scans value
     out.continuousScans = true;
-	}else if(streq(configLines[4], "FALSE")){
+	}else if(streq(configLines[5], "FALSE")){
     out.continuousScans = false;
 	}else{
-	  throw MalformedInputException(3, configLines[4]);
+	  throw MalformedInputException(3, configLines[5]);
 	}
+
+	out.baudRate = atoi(configLines[6].c_str());
 
 	/* END CONFIG OPTIONS */
 

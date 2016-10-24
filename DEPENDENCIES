@@ -1,0 +1,2 @@
+Dependencies:
+  libserial0, libserial-dev ( http://libserial.sourceforge.net )
